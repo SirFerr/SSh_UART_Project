@@ -1,0 +1,20 @@
+Time resolution is 1 ps
+=== UART CONTROLLER TEST START ===
+
+[TEST 1] Normal receive (no errors)
+[7013645000 ns] ? RX VALID | data=0x55 | frame_err=0 | parity_err=0
+
+[TEST 2] Frame format error
+[16457485000 ns] ? RX VALID | data=0xa5 | frame_err=1 | parity_err=0
+
+[TEST 3] Parity error
+[40900365000 ns] ? RX VALID | data=0x3c | frame_err=0 | parity_err=1
+
+[TEST 4] Both frame & parity errors
+[65343245000 ns] ? RX VALID | data=0xf0 | frame_err=1 | parity_err=1
+
+[TEST 5] TX transmission of 0x5A
+[74925955000 ns] ? TX finished. TX line=1 (1=idle)
+
+=== UART CONTROLLER TEST COMPLETE ===
+$finish called at time : 76925955 ns : File "C:/Users/ursus/SSh_UART_Project/SSh_UART_Project.srcs/sim_1/new/SS_UART_TB.v" Line 104
