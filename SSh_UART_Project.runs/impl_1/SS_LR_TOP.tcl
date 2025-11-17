@@ -17,7 +17,7 @@ proc create_report { reportName command } {
   }
 }
 namespace eval ::optrace {
-  variable script "C:/Users/ursus/SSh_UART_Project/SSh_UART_Project.runs/impl_1/SS_LR_TOP.tcl"
+  variable script "C:/SSh_UART_Project/SSh_UART_Project.runs/impl_1/SS_LR_TOP.tcl"
   variable category "vivado_impl"
 }
 
@@ -123,9 +123,9 @@ start_step write_bitstream
 set ACTIVE_STEP write_bitstream
 set rc [catch {
   create_msg_db write_bitstream.pb
-  set_param chipscope.maxJobs 4
+  set_param chipscope.maxJobs 3
   open_checkpoint SS_LR_TOP_routed.dcp
-  set_property webtalk.parent_dir C:/Users/ursus/SSh_UART_Project/SSh_UART_Project.cache/wt [current_project]
+  set_property webtalk.parent_dir C:/SSh_UART_Project/SSh_UART_Project.cache/wt [current_project]
 set_property TOP SS_LR_TOP [current_fileset]
 OPTRACE "read constraints: write_bitstream" START { }
 OPTRACE "read constraints: write_bitstream" END { }

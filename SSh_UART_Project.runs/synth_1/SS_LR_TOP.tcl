@@ -4,7 +4,7 @@
 
 set TIME_start [clock seconds] 
 namespace eval ::optrace {
-  variable script "C:/Users/ursus/SSh_UART_Project/SSh_UART_Project.runs/synth_1/SS_LR_TOP.tcl"
+  variable script "C:/SSh_UART_Project/SSh_UART_Project.runs/synth_1/SS_LR_TOP.tcl"
   variable category "vivado_synth"
 }
 
@@ -70,29 +70,30 @@ proc create_report { reportName command } {
   }
 }
 OPTRACE "synth_1" START { ROLLUP_AUTO }
+set_param chipscope.maxJobs 3
 OPTRACE "Creating in-memory project" START { }
 create_project -in_memory -part xc7a100tcsg324-1
 
 set_param project.singleFileAddWarning.threshold 0
 set_param project.compositeFile.enableAutoGeneration 0
 set_param synth.vivado.isSynthRun true
-set_property webtalk.parent_dir C:/Users/ursus/SSh_UART_Project/SSh_UART_Project.cache/wt [current_project]
-set_property parent.project_path C:/Users/ursus/SSh_UART_Project/SSh_UART_Project.xpr [current_project]
+set_property webtalk.parent_dir C:/SSh_UART_Project/SSh_UART_Project.cache/wt [current_project]
+set_property parent.project_path C:/SSh_UART_Project/SSh_UART_Project.xpr [current_project]
 set_property default_lib xil_defaultlib [current_project]
 set_property target_language Verilog [current_project]
-set_property ip_output_repo c:/Users/ursus/SSh_UART_Project/SSh_UART_Project.cache/ip [current_project]
+set_property ip_output_repo c:/SSh_UART_Project/SSh_UART_Project.cache/ip [current_project]
 set_property ip_cache_permissions {read write} [current_project]
 OPTRACE "Creating in-memory project" END { }
 OPTRACE "Adding files" START { }
 read_verilog -library xil_defaultlib {
-  C:/Users/ursus/SSh_UART_Project/SSh_UART_Project.srcs/sources_1/new/SS_BTN_FLTR.v
-  C:/Users/ursus/SSh_UART_Project/SSh_UART_Project.srcs/sources_1/new/SS_DC_ASCII_HEX.v
-  C:/Users/ursus/SSh_UART_Project/SSh_UART_Project.srcs/sources_1/new/SS_DC_HEX_ASCII.v
-  C:/Users/ursus/SSh_UART_Project/SSh_UART_Project.srcs/sources_1/new/SS_DIVIDER.v
-  C:/Users/ursus/SSh_UART_Project/SSh_UART_Project.srcs/sources_1/new/SS_FSM.v
-  C:/Users/ursus/SSh_UART_Project/SSh_UART_Project.srcs/sources_1/new/SS_ROM.v
-  C:/Users/ursus/SSh_UART_Project/SSh_UART_Project.srcs/sources_1/new/SS_UART.v
-  C:/Users/ursus/SSh_UART_Project/SSh_UART_Project.srcs/sources_1/new/SS_LR_TOP.v
+  C:/SSh_UART_Project/SSh_UART_Project.srcs/sources_1/new/SS_BTN_FLTR.v
+  C:/SSh_UART_Project/SSh_UART_Project.srcs/sources_1/new/SS_DC_ASCII_HEX.v
+  C:/SSh_UART_Project/SSh_UART_Project.srcs/sources_1/new/SS_DC_HEX_ASCII.v
+  C:/SSh_UART_Project/SSh_UART_Project.srcs/sources_1/new/SS_DIVIDER.v
+  C:/SSh_UART_Project/SSh_UART_Project.srcs/sources_1/new/SS_FSM.v
+  C:/SSh_UART_Project/SSh_UART_Project.srcs/sources_1/new/SS_ROM.v
+  C:/SSh_UART_Project/SSh_UART_Project.srcs/sources_1/new/SS_UART.v
+  C:/SSh_UART_Project/SSh_UART_Project.srcs/sources_1/new/SS_LR_TOP.v
 }
 OPTRACE "Adding files" END { }
 # Mark all dcp files as not used in implementation to prevent them from being
@@ -103,12 +104,12 @@ OPTRACE "Adding files" END { }
 foreach dcp [get_files -quiet -all -filter file_type=="Design\ Checkpoint"] {
   set_property used_in_implementation false $dcp
 }
-read_xdc C:/Users/ursus/Documents/Nexys-A7-100T-Master.xdc
-set_property used_in_implementation false [get_files C:/Users/ursus/Documents/Nexys-A7-100T-Master.xdc]
+read_xdc C:/SSh_UART_Project/Nexys-A7-100T-Master.xdc
+set_property used_in_implementation false [get_files C:/SSh_UART_Project/Nexys-A7-100T-Master.xdc]
 
 set_param ips.enableIPCacheLiteLoad 1
 
-read_checkpoint -auto_incremental -incremental C:/Users/ursus/SSh_UART_Project/SSh_UART_Project.srcs/utils_1/imports/synth_1/SSh_TOP.dcp
+read_checkpoint -auto_incremental -incremental C:/SSh_UART_Project/SSh_UART_Project.srcs/utils_1/imports/synth_1/SSh_TOP.dcp
 close [open __synthesis_is_running__ w]
 
 OPTRACE "synth_design" START { }
