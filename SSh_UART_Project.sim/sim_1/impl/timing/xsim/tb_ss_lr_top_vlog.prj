@@ -1,0 +1,7 @@
+# compile verilog/system verilog design source files
+verilog xil_defaultlib  \
+"tb_ss_lr_top_time_impl.v" \
+"../../../../../SSh_UART_Project.srcs/sim_1/new/tb_ss_lr_top.v" \
+
+# Do not sort compile order
+nosort

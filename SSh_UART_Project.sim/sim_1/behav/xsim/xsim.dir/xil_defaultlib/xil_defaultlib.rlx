@@ -2,7 +2,9 @@
 2020.2
 Oct 14 2022
 05:20:55
-C:/Users/ursus/SSh_UART_Project/SSh_UART_Project.sim/sim_1/behav/xsim/glbl.v,1763382251,verilog,,,,glbl,,,,,,,,
-C:/Users/ursus/SSh_UART_Project/SSh_UART_Project.srcs/sim_1/new/SS_UART_TB.v,1762945876,verilog,,,,SS_UART_TB,,,,,,,,
-C:/Users/ursus/SSh_UART_Project/SSh_UART_Project.srcs/sources_1/new/SS_DIVIDER.v,1763369627,verilog,,C:/Users/ursus/SSh_UART_Project/SSh_UART_Project.srcs/sources_1/new/SS_UART.v,,SS_DIVIDER,,,,,,,,
-C:/Users/ursus/SSh_UART_Project/SSh_UART_Project.srcs/sources_1/new/SS_UART.v,1764418678,verilog,,C:/Users/ursus/SSh_UART_Project/SSh_UART_Project.srcs/sim_1/new/SS_UART_TB.v,,SS_UART,,,,,,,,
+C:/Users/ursus/SSh_UART_Project/SSh_UART_Project.sim/sim_1/behav/xsim/glbl.v,1665704903,verilog,,,,glbl,,,,,,,,
+C:/Users/ursus/SSh_UART_Project/SSh_UART_Project.srcs/sim_1/new/tb_ss_lr_top.v,1764421981,verilog,,,,tb_ss_fsm,,,,,,,,
+C:/Users/ursus/SSh_UART_Project/SSh_UART_Project.srcs/sources_1/new/SS_DC_ASCII_HEX.v,1762935677,verilog,,C:/Users/ursus/SSh_UART_Project/SSh_UART_Project.srcs/sources_1/new/SS_DC_HEX_ASCII.v,,SS_DC_ASCII_HEX,,,,,,,,
+C:/Users/ursus/SSh_UART_Project/SSh_UART_Project.srcs/sources_1/new/SS_DC_HEX_ASCII.v,1762935675,verilog,,C:/Users/ursus/SSh_UART_Project/SSh_UART_Project.srcs/sources_1/new/SS_FSM.v,,SS_DC_HEX_ASCII,,,,,,,,
+C:/Users/ursus/SSh_UART_Project/SSh_UART_Project.srcs/sources_1/new/SS_FSM.v,1764422960,verilog,,C:/Users/ursus/SSh_UART_Project/SSh_UART_Project.srcs/sources_1/new/SS_ROM.v,,SS_FSM,,,,,,,,
+C:/Users/ursus/SSh_UART_Project/SSh_UART_Project.srcs/sources_1/new/SS_ROM.v,1762938722,verilog,,C:/Users/ursus/SSh_UART_Project/SSh_UART_Project.srcs/sim_1/new/tb_ss_lr_top.v,,SS_ROM,,,,,,,,

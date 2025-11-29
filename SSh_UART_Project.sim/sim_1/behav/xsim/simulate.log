@@ -1,0 +1,7 @@
+Time resolution is 1 ps
+
+=== FSM TB start ===
+aaSSee::ÿ
+
+=== FSM TB end ===
+$finish called at time : 20335 ns : File "C:/Users/ursus/SSh_UART_Project/SSh_UART_Project.srcs/sim_1/new/tb_ss_lr_top.v" Line 80

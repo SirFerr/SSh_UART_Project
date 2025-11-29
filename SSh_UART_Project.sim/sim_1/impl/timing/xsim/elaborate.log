@@ -1,0 +1,10 @@
+Vivado Simulator v2022.2
+Copyright 1986-1999, 2001-2022 Xilinx, Inc. All Rights Reserved.
+Running: C:/Xilinx_Windows_Unpacked_2022_2/Vivado/2022.2/bin/unwrapped/win64.o/xelab.exe --incr --debug typical --relax --mt 2 --maxdelay -L xil_defaultlib -L simprims_ver -L secureip --snapshot tb_ss_lr_top_time_impl -transport_int_delays -pulse_r 0 -pulse_int_r 0 -pulse_e 0 -pulse_int_e 0 xil_defaultlib.tb_ss_lr_top xil_defaultlib.glbl -log elaborate.log 
+Using 2 slave threads.
+Starting static elaboration
+Pass Through NonSizing Optimizer
+ERROR: [VRFC 10-2991] 'st' is not declared under prefix 'fsm' [C:/Users/ursus/SSh_UART_Project/SSh_UART_Project.srcs/sim_1/new/tb_ss_lr_top.v:43]
+ERROR: [VRFC 10-2991] 'rx_data' is not declared under prefix 'dut' [C:/Users/ursus/SSh_UART_Project/SSh_UART_Project.srcs/sim_1/new/tb_ss_lr_top.v:44]
+ERROR: [VRFC 10-2991] 'A' is not declared under prefix 'fsm' [C:/Users/ursus/SSh_UART_Project/SSh_UART_Project.srcs/sim_1/new/tb_ss_lr_top.v:45]
+ERROR: [XSIM 43-3322] Static elaboration of top level Verilog design unit(s) in library work failed.

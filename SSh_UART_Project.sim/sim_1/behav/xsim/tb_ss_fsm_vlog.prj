@@ -1,0 +1,13 @@
+# compile verilog/system verilog design source files
+verilog xil_defaultlib  \
+"../../../../SSh_UART_Project.srcs/sources_1/new/SS_DC_ASCII_HEX.v" \
+"../../../../SSh_UART_Project.srcs/sources_1/new/SS_DC_HEX_ASCII.v" \
+"../../../../SSh_UART_Project.srcs/sources_1/new/SS_FSM.v" \
+"../../../../SSh_UART_Project.srcs/sources_1/new/SS_ROM.v" \
+"../../../../SSh_UART_Project.srcs/sim_1/new/tb_ss_lr_top.v" \
+
+# compile glbl module
+verilog xil_defaultlib "glbl.v"
+
+# Do not sort compile order
+nosort

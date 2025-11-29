@@ -1,0 +1,10 @@
+INFO: [VRFC 10-2263] Analyzing Verilog file "C:/Users/ursus/SSh_UART_Project/SSh_UART_Project.sim/sim_1/impl/timing/xsim/tb_ss_lr_top_time_impl.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module SS_BTN_FLTR
+INFO: [VRFC 10-311] analyzing module SS_DIVIDER
+INFO: [VRFC 10-311] analyzing module SS_FSM
+INFO: [VRFC 10-311] analyzing module SS_LR_TOP
+INFO: [VRFC 10-311] analyzing module SS_ROM
+INFO: [VRFC 10-311] analyzing module SS_UART
+INFO: [VRFC 10-311] analyzing module glbl
+INFO: [VRFC 10-2263] Analyzing Verilog file "C:/Users/ursus/SSh_UART_Project/SSh_UART_Project.srcs/sim_1/new/tb_ss_lr_top.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module tb_ss_lr_top

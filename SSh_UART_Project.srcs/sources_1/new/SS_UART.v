@@ -2,7 +2,7 @@ module SS_UART #(
     parameter integer CLK_HZ      = 100_000_000,
     parameter integer BAUD        = 1800,
     parameter integer RATIO       = 8,
-    parameter integer SYNC_STAGES = 3
+    parameter integer SYNC_STAGES = 3 
 )(
     input  wire clk,
     input  wire rst,
