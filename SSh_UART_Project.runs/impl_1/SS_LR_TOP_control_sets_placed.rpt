@@ -1,7 +1,7 @@
 Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
 --------------------------------------------------------------------------------------
 | Tool Version : Vivado v.2022.2 (win64) Build 3671981 Fri Oct 14 05:00:03 MDT 2022
-| Date         : Sat Nov 29 16:36:27 2025
+| Date         : Sat Nov 29 16:44:03 2025
 | Host         : FerrsPC running 64-bit major release  (build 9200)
 | Command      : report_control_sets -verbose -file SS_LR_TOP_control_sets_placed.rpt
 | Design       : SS_LR_TOP
@@ -79,15 +79,15 @@ Table of Contents
 |  CLK100MHZ_IBUF_BUFG | fsm/cnt_hex[4]_i_1_n_0                              | btn_filter/rst                    |                3 |              5 |         1.67 |
 |  CLK100MHZ_IBUF_BUFG | uart/baud_gen_inst/FSM_sequential_t_state_reg[2][0] |                                   |                1 |              7 |         7.00 |
 |  CLK100MHZ_IBUF_BUFG | fsm/tx_start_i_1_n_0                                | btn_filter/rst                    |                2 |              7 |         3.50 |
-|  CLK100MHZ_IBUF_BUFG | uart/baud_gen_inst/btn_o_reg[0]                     |                                   |                1 |              8 |         8.00 |
-|  CLK100MHZ_IBUF_BUFG | uart/baud_gen_inst/E[0]                             |                                   |                2 |              8 |         4.00 |
 |  CLK100MHZ_IBUF_BUFG | uart/E[0]                                           | btn_filter/rst                    |                3 |              8 |         2.67 |
+|  CLK100MHZ_IBUF_BUFG | uart/baud_gen_inst/E[0]                             |                                   |                2 |              8 |         4.00 |
+|  CLK100MHZ_IBUF_BUFG | uart/baud_gen_inst/btn_o_reg[0]                     |                                   |                1 |              8 |         8.00 |
 |  CLK100MHZ_IBUF_BUFG |                                                     | uart/baud_gen_inst/cnt[0]_i_1_n_0 |                4 |             13 |         3.25 |
 |  CLK100MHZ_IBUF_BUFG |                                                     |                                   |               10 |             17 |         1.70 |
 |  CLK100MHZ_IBUF_BUFG |                                                     | btn_filter/acc[0]_i_1_n_0         |                5 |             18 |         3.60 |
 |  CLK100MHZ_IBUF_BUFG |                                                     | btn_filter/rst                    |               14 |             26 |         1.86 |
-|  CLK100MHZ_IBUF_BUFG | fsm/B[51]_i_1_n_0                                   | btn_filter/rst                    |               11 |             52 |         4.73 |
 |  CLK100MHZ_IBUF_BUFG | fsm/A[51]_i_1_n_0                                   | btn_filter/rst                    |               10 |             52 |         5.20 |
+|  CLK100MHZ_IBUF_BUFG | fsm/B[51]_i_1_n_0                                   | btn_filter/rst                    |               11 |             52 |         4.73 |
 |  CLK100MHZ_IBUF_BUFG | fsm/result[103]_i_1_n_0                             | btn_filter/rst                    |               23 |            110 |         4.78 |
 +----------------------+-----------------------------------------------------+-----------------------------------+------------------+----------------+--------------+
 

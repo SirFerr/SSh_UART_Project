@@ -20,6 +20,7 @@ module SS_FSM #(
     localparam MSG_FMT  = 3'd1;
     localparam MSG_PAR  = 3'd2;
     localparam MSG_FRM  = 3'd3;
+    localparam MSG_BOTH = 3'd4;
 
     // состояния
     localparam S_IDLE=0, S_IN_A=1, S_SPACE=2, S_IN_B=3, S_WAIT_EQ=4;
@@ -77,6 +78,10 @@ module SS_FSM #(
                 st <= S_SEND_ERR;
                 rom_sel <= MSG_FRM;
                 rom_idx <= 0;
+            end else if (rx_parity_err && rx_frame_err) begin
+            st <= S_SEND_ERR;
+            rom_sel <= MSG_BOTH;
+            rom_idx <= 0;
             end
 
             case (st)
