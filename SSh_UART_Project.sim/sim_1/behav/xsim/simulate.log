@@ -1,0 +1,93 @@
+Time resolution is 1 ps
+=== FSM Testbench Start ===
+
+--- Тест 1: Корректные A + B ---
+[               25000] RX: '0' (0x30), ParityErr=0, FrameErr=0
+[               45000] RX: '0' (0x30), ParityErr=0, FrameErr=0
+[               65000] RX: '0' (0x30), ParityErr=0, FrameErr=0
+[               85000] RX: '0' (0x30), ParityErr=0, FrameErr=0
+[              105000] RX: '0' (0x30), ParityErr=0, FrameErr=0
+[              125000] RX: '0' (0x30), ParityErr=0, FrameErr=0
+[              145000] RX: '0' (0x30), ParityErr=0, FrameErr=0
+[              165000] RX: '0' (0x30), ParityErr=0, FrameErr=0
+[              185000] RX: '0' (0x30), ParityErr=0, FrameErr=0
+[              205000] RX: '0' (0x30), ParityErr=0, FrameErr=0
+[              225000] RX: '0' (0x30), ParityErr=0, FrameErr=0
+[              245000] RX: 'A' (0x41), ParityErr=0, FrameErr=0
+[              265000] RX: '1' (0x31), ParityErr=0, FrameErr=0
+[              285000] RX: ' ' (0x20), ParityErr=0, FrameErr=0
+[              305000] RX: '0' (0x30), ParityErr=0, FrameErr=0
+[              325000] RX: '0' (0x30), ParityErr=0, FrameErr=0
+[              345000] RX: '0' (0x30), ParityErr=0, FrameErr=0
+[              365000] RX: '0' (0x30), ParityErr=0, FrameErr=0
+[              385000] RX: '0' (0x30), ParityErr=0, FrameErr=0
+[              405000] RX: '0' (0x30), ParityErr=0, FrameErr=0
+[              425000] RX: '0' (0x30), ParityErr=0, FrameErr=0
+[              445000] RX: '0' (0x30), ParityErr=0, FrameErr=0
+[              465000] RX: '0' (0x30), ParityErr=0, FrameErr=0
+[              485000] RX: '0' (0x30), ParityErr=0, FrameErr=0
+[              505000] RX: '1' (0x31), ParityErr=0, FrameErr=0
+[              525000] RX: 'B' (0x42), ParityErr=0, FrameErr=0
+[              545000] RX: 'B' (0x42), ParityErr=0, FrameErr=0
+[              565000] RX: '=' (0x3d), ParityErr=0, FrameErr=0
+[              615000] TX: 'a' (0x61)
+[              655000] TX: 'N' (0x4e)
+[              695000] TX: 'S' (0x53)
+[              735000] TX: 'w' (0x77)
+[              775000] TX: 'e' (0x65)
+[              815000] TX: 'r' (0x72)
+[              855000] TX: ':' (0x3a)
+[              895000] TX: ' ' (0x20)
+[             1165000] TX: '2' (0x32)
+[             1205000] TX: '5' (0x35)
+[             1245000] TX: 'C' (0x43)
+
+--- Тест 2: Ошибка четности ---
+[             1575000] RX: 'A' (0x41), ParityErr=1, FrameErr=0
+[             1615000] TX: 'E' (0x45)
+[             1655000] TX: 'R' (0x52)
+[             1695000] TX: 'r' (0x72)
+[             1735000] TX: 'O' (0x4f)
+[             1775000] TX: 'R' (0x52)
+[             1815000] TX: '-' (0x2d)
+[             1855000] TX: ' ' (0x20)
+[             1895000] TX: 'p' (0x70)
+[             1935000] TX: 'A' (0x41)
+[             1975000] TX: 'R' (0x52)
+[             2015000] TX: 'i' (0x69)
+[             2055000] TX: 'T' (0x54)
+
+--- Тест 3: Ошибка кадра ---
+[             2085000] RX: 'A' (0x41), ParityErr=0, FrameErr=1
+[             2095000] TX: 'y' (0x79)
+[             2125000] TX: 'e' (0x65)
+[             2165000] TX: 'R' (0x52)
+[             2205000] TX: 'r' (0x72)
+[             2245000] TX: 'O' (0x4f)
+[             2285000] TX: 'r' (0x72)
+[             2325000] TX: '-' (0x2d)
+[             2365000] TX: ' ' (0x20)
+[             2405000] TX: 'f' (0x66)
+[             2445000] TX: 'O' (0x4f)
+[             2485000] TX: 'R' (0x52)
+[             2525000] TX: 'M' (0x4d)
+[             2565000] TX: 'A' (0x41)
+
+--- Тест 3: Ошибка четности + кадр ---
+[             2595000] RX: 'A' (0x41), ParityErr=1, FrameErr=1
+[             2605000] TX: 'T' (0x54)
+[             2635000] TX: 'e' (0x65)
+[             2675000] TX: 'R' (0x52)
+[             2715000] TX: 'r' (0x72)
+[             2755000] TX: 'O' (0x4f)
+[             2795000] TX: 'r' (0x72)
+[             2835000] TX: '-' (0x2d)
+[             2875000] TX: 'u' (0x75)
+[             2915000] TX: 'A' (0x41)
+[             2955000] TX: 'R' (0x52)
+[             2995000] TX: 't' (0x74)
+
+--- Тест 4: Ошибка формата ---
+[             3105000] RX: 'Z' (0x5a), ParityErr=0, FrameErr=0
+[             3145000] TX: 'e' (0x65)
+[             3185000] TX: 'R' (0x5
