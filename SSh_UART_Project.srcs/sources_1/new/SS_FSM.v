@@ -17,9 +17,9 @@ module SS_FSM #(
 );
     // Коды сообщений
     localparam MSG_ANS  = 3'd0;
-    localparam MSG_FMT  = 3'd1;
+    localparam MSG_FRM  = 3'd1;
     localparam MSG_PAR  = 3'd2;
-    localparam MSG_FRM  = 3'd3;
+    localparam MSG_FMT  = 3'd3;
     localparam MSG_BOTH = 3'd4;
 
     // Состояния FSM
@@ -174,7 +174,8 @@ module SS_FSM #(
                                 st <= S_ERR_FETCH; rom_sel <= MSG_FMT; rom_idx <= 0;
                             end
                         end else begin
-                            if (rx_data == "=") st <= S_WAIT_EQ;
+                              if (rx_data == 8'h0D || rx_data == 8'h0A) // CR or LF
+                                      st <= S_WAIT_EQ;                               
                             else begin st <= S_ERR_FETCH; rom_sel <= MSG_FMT; rom_idx <= 0; end
                         end
                     end
@@ -258,7 +259,10 @@ module SS_FSM #(
                 
                 S_ERR_WAIT: begin
                     if (!tx_busy) begin
-                        if (rom_last) st <= S_IDLE;
+                        if (rom_last) begin
+                            rom_idx <= 0;
+                            st <= S_IDLE;
+                            end
                         else begin
                             rom_idx <= rom_idx + 1;
                             st <= S_ERR_FETCH;

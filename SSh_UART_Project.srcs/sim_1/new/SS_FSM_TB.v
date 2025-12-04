@@ -75,7 +75,8 @@ module SS_FSM_TB;
         send_operand(52'hA1);
         send_byte(" ", 0, 0);            // пробел
         send_operand(52'h1BB);
-        send_byte("=", 0, 0);            // "="
+        send_byte(8'h0D, 0, 0);  // CR
+        send_byte(8'h0A, 0, 0);  // LF
 
         #1000;
 
