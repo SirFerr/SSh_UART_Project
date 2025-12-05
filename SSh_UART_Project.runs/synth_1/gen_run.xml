@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<GenRun Id="synth_1" LaunchPart="xc7a100tcsg324-1" LaunchTime="1764923284" LaunchIncrCheckpoint="$PSRCDIR/utils_1/imports/synth_1/SSh_TOP.dcp">
+<GenRun Id="synth_1" LaunchPart="xc7a100tcsg324-1" LaunchTime="1764925341" LaunchIncrCheckpoint="$PSRCDIR/utils_1/imports/synth_1/SSh_TOP.dcp">
   <File Type="PA-TCL" Name="SS_LR_TOP.tcl"/>
   <File Type="RDS-PROPCONSTRS" Name="SS_LR_TOP_drc_synth.rpt"/>
   <File Type="REPORTS-TCL" Name="SS_LR_TOP_reports.tcl"/>
@@ -64,6 +64,12 @@
       <FileInfo>
         <Attr Name="UsedIn" Val="synthesis"/>
         <Attr Name="UsedIn" Val="implementation"/>
+        <Attr Name="UsedIn" Val="simulation"/>
+      </FileInfo>
+    </File>
+    <File Path="$PSRCDIR/sources_1/new/messages.mem">
+      <FileInfo>
+        <Attr Name="UsedIn" Val="synthesis"/>
         <Attr Name="UsedIn" Val="simulation"/>
       </FileInfo>
     </File>

@@ -70,6 +70,7 @@ proc create_report { reportName command } {
   }
 }
 OPTRACE "synth_1" START { ROLLUP_AUTO }
+set_param chipscope.maxJobs 3
 OPTRACE "Creating in-memory project" START { }
 create_project -in_memory -part xc7a100tcsg324-1
 
@@ -84,6 +85,7 @@ set_property ip_output_repo c:/SSh_UART_Project/SSh_UART_Project.cache/ip [curre
 set_property ip_cache_permissions {read write} [current_project]
 OPTRACE "Creating in-memory project" END { }
 OPTRACE "Adding files" START { }
+read_mem C:/SSh_UART_Project/SSh_UART_Project.srcs/sources_1/new/messages.mem
 read_verilog -library xil_defaultlib {
   C:/SSh_UART_Project/SSh_UART_Project.srcs/sources_1/new/SS_BTN_FLTR.v
   C:/SSh_UART_Project/SSh_UART_Project.srcs/sources_1/new/SS_DC_ASCII_HEX.v
