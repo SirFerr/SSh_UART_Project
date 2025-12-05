@@ -6,14 +6,14 @@ Starting static elaboration
 Pass Through NonSizing Optimizer
 Completed static elaboration
 Starting simulation data flow analysis
-WARNING: [XSIM 43-4099] "C:/SSh_UART_Project/SSh_UART_Project.srcs/sources_1/new/SS_FSM.v" Line 1. Module SS_FSM doesn't have a timescale but at least one module in design has a timescale.
-WARNING: [XSIM 43-4099] "C:/SSh_UART_Project/SSh_UART_Project.srcs/sources_1/new/SS_DC_ASCII_HEX.v" Line 1. Module SS_DC_ASCII_HEX doesn't have a timescale but at least one module in design has a timescale.
-WARNING: [XSIM 43-4099] "C:/SSh_UART_Project/SSh_UART_Project.srcs/sources_1/new/SS_DC_HEX_ASCII.v" Line 1. Module SS_DC_HEX_ASCII doesn't have a timescale but at least one module in design has a timescale.
-WARNING: [XSIM 43-4099] "C:/SSh_UART_Project/SSh_UART_Project.srcs/sources_1/new/SS_ROM.v" Line 1. Module SS_ROM doesn't have a timescale but at least one module in design has a timescale.
-WARNING: [XSIM 43-4099] "C:/SSh_UART_Project/SSh_UART_Project.srcs/sources_1/new/SS_FSM.v" Line 1. Module SS_FSM doesn't have a timescale but at least one module in design has a timescale.
-WARNING: [XSIM 43-4099] "C:/SSh_UART_Project/SSh_UART_Project.srcs/sources_1/new/SS_DC_ASCII_HEX.v" Line 1. Module SS_DC_ASCII_HEX doesn't have a timescale but at least one module in design has a timescale.
-WARNING: [XSIM 43-4099] "C:/SSh_UART_Project/SSh_UART_Project.srcs/sources_1/new/SS_DC_HEX_ASCII.v" Line 1. Module SS_DC_HEX_ASCII doesn't have a timescale but at least one module in design has a timescale.
-WARNING: [XSIM 43-4099] "C:/SSh_UART_Project/SSh_UART_Project.srcs/sources_1/new/SS_ROM.v" Line 1. Module SS_ROM doesn't have a timescale but at least one module in design has a timescale.
+WARNING: [XSIM 43-4099] "C:/Users/ursus/SSh_UART_Project/SSh_UART_Project.srcs/sources_1/new/SS_FSM.v" Line 1. Module SS_FSM doesn't have a timescale but at least one module in design has a timescale.
+WARNING: [XSIM 43-4099] "C:/Users/ursus/SSh_UART_Project/SSh_UART_Project.srcs/sources_1/new/SS_DC_ASCII_HEX.v" Line 1. Module SS_DC_ASCII_HEX doesn't have a timescale but at least one module in design has a timescale.
+WARNING: [XSIM 43-4099] "C:/Users/ursus/SSh_UART_Project/SSh_UART_Project.srcs/sources_1/new/SS_DC_HEX_ASCII.v" Line 1. Module SS_DC_HEX_ASCII doesn't have a timescale but at least one module in design has a timescale.
+WARNING: [XSIM 43-4099] "C:/Users/ursus/SSh_UART_Project/SSh_UART_Project.srcs/sources_1/new/SS_ROM.v" Line 1. Module SS_ROM doesn't have a timescale but at least one module in design has a timescale.
+WARNING: [XSIM 43-4099] "C:/Users/ursus/SSh_UART_Project/SSh_UART_Project.srcs/sources_1/new/SS_FSM.v" Line 1. Module SS_FSM doesn't have a timescale but at least one module in design has a timescale.
+WARNING: [XSIM 43-4099] "C:/Users/ursus/SSh_UART_Project/SSh_UART_Project.srcs/sources_1/new/SS_DC_ASCII_HEX.v" Line 1. Module SS_DC_ASCII_HEX doesn't have a timescale but at least one module in design has a timescale.
+WARNING: [XSIM 43-4099] "C:/Users/ursus/SSh_UART_Project/SSh_UART_Project.srcs/sources_1/new/SS_DC_HEX_ASCII.v" Line 1. Module SS_DC_HEX_ASCII doesn't have a timescale but at least one module in design has a timescale.
+WARNING: [XSIM 43-4099] "C:/Users/ursus/SSh_UART_Project/SSh_UART_Project.srcs/sources_1/new/SS_ROM.v" Line 1. Module SS_ROM doesn't have a timescale but at least one module in design has a timescale.
 Completed simulation data flow analysis
 Time Resolution for simulation is 1ps
 Compiling module xil_defaultlib.SS_DC_ASCII_HEX

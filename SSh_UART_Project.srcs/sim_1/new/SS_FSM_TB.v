@@ -101,17 +101,17 @@ module SS_FSM_TB;
         // 2. Ошибка четности
         $display("\n--- TEST 2: Parity error ---");
         send_byte("A", 1, 0);
-        #500;
+        #2000;
 
         // 3. Ошибка кадра
         $display("\n--- TEST 3: Frame error ---");
         send_byte("A", 0, 1);
-        #500;
+        #2000;
 
         // 4. Обе ошибки
         $display("\n--- TEST 4: Both errors ---");
         send_byte("A", 1, 1);
-        #500;
+        #2000;
 
         // 5. Ошибка формата
         $display("\n--- TEST 5: Format error ---");

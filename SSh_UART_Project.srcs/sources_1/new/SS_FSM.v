@@ -29,19 +29,19 @@ module SS_FSM #(
     localparam S_IN_B       = 3;
     localparam S_WAIT_EQ    = 4;
 
-    // Группа заголовка
+    // Заголовок
     localparam S_HDR_FETCH  = 5,
                S_HDR_SEND   = 6,
                S_HDR_LATCH  = 7,
                S_HDR_WAIT   = 8;
 
-    // Группа результата
+    // Результат
     localparam S_RES_CHECK  = 9,
                S_RES_SEND   = 10,
                S_RES_LATCH  = 11,
                S_RES_WAIT   = 12;
 
-    // Группа ошибки
+    // Ошибки
     localparam S_ERR_FETCH  = 13,
                S_ERR_SEND   = 14,
                S_ERR_LATCH  = 15,
@@ -84,47 +84,27 @@ module SS_FSM #(
         .last (rom_last)
     );
 
-    // Счётчики
+    // Счетчики
     reg [4:0] cnt_hex;
     reg [5:0] out_cnt;
-    reg [5:0] skip_nibbles;
-    reg [6:0] temp_zeros;
 
-    // Отправка байта по ODPS (DRP-канал)
+    // Отправка байта
     task send;
         input [7:0] c;
         begin
             TX_DATA_R <= c;
-            TX_RDY_T  <= 1'b1;   // импульс "готов передать байт"
+            TX_RDY_T  <= 1'b1;
         end
     endtask
 
-    // Подсчёт ведущих нулей (для обрезки)
-    function [6:0] count_leading_zeros;
-        input [103:0] val;
-        integer i;
-        reg     found;
-        begin
-            count_leading_zeros = 0;
-            found               = 0;
-            for (i = 103; i >= 0; i = i - 1) begin
-                if (!found) begin
-                    if (val[i] == 1'b1)
-                        found = 1'b1;
-                    else
-                        count_leading_zeros = count_leading_zeros + 1;
-                end
-            end
-        end
-    endfunction
-
-    // ---------------- Основной FSM ----------------
+    // ---------------------------------------------------------
+    // FSM
+    // ---------------------------------------------------------
     always @(posedge clk) begin
         if (rst) begin
             st        <= S_IDLE;
             TX_RDY_T  <= 1'b0;
             TX_DATA_R <= 8'h00;
-
             A <= 0;
             B <= 0;
             cnt_hex <= 0;
@@ -132,18 +112,14 @@ module SS_FSM #(
             rom_sel <= 0;
             rom_idx <= 0;
 
-            result       <= 0;
-            out_cnt      <= 0;
-            skip_nibbles <= 0;
-            temp_zeros   <= 0;
+            result  <= 0;
+            out_cnt <= 0;
+
         end else begin
-            // по умолчанию передавать байт не пытаемся
             TX_RDY_T <= 1'b0;
 
-            // =========================================================
-            // ГЛОБАЛЬНАЯ ОБРАБОТКА ОШИБОК UART (приоритет выше всего)
-            // =========================================================
-            if (RX_DATA_EN && (rx_frame_err || rx_parity_err)) begin
+            // Ошибки UART
+            if (RX_DATA_EN && (rx_parity_err || rx_frame_err)) begin
                 st      <= S_ERR_FETCH;
                 rom_idx <= 0;
 
@@ -153,11 +129,10 @@ module SS_FSM #(
                     rom_sel <= MSG_PAR;
                 else
                     rom_sel <= MSG_FRM;
+
             end else begin
                 case (st)
-                    // -------------------------------------------------
-                    // ВВОД A
-                    // -------------------------------------------------
+
                     S_IDLE: begin
                         A <= 0;
                         B <= 0;
@@ -199,9 +174,6 @@ module SS_FSM #(
                         end
                     end
 
-                    // -------------------------------------------------
-                    // ПРОБЕЛ
-                    // -------------------------------------------------
                     S_SPACE: begin
                         if (RX_DATA_EN) begin
                             if (in_ok) begin
@@ -216,9 +188,6 @@ module SS_FSM #(
                         end
                     end
 
-                    // -------------------------------------------------
-                    // ВВОД B
-                    // -------------------------------------------------
                     S_IN_B: begin
                         if (RX_DATA_EN) begin
                             if (cnt_hex < 13) begin
@@ -242,30 +211,16 @@ module SS_FSM #(
                         end
                     end
 
-                    // -------------------------------------------------
-                    // ВЫЧИСЛЕНИЕ A+B
-                    // -------------------------------------------------
                     S_WAIT_EQ: begin
                         result  <= A + B;
                         rom_sel <= MSG_ANS;
                         rom_idx <= 0;
-
-                        temp_zeros = count_leading_zeros(A + B) >> 2;
-                        if (temp_zeros >= 26)
-                            skip_nibbles <= 25;
-                        else
-                            skip_nibbles <= temp_zeros[5:0];
-
                         out_cnt <= 0;
                         st      <= S_HDR_FETCH;
                     end
 
-                    // -------------------------------------------------
-                    // ВЫВОД ЗАГОЛОВКА (ROM)
-                    // -------------------------------------------------
-                    S_HDR_FETCH: begin
-                        st <= S_HDR_SEND;
-                    end
+                    // Заголовок "aNSwer: "
+                    S_HDR_FETCH: st <= S_HDR_SEND;
 
                     S_HDR_SEND: begin
                         if (TX_RDY_R) begin
@@ -274,13 +229,9 @@ module SS_FSM #(
                         end
                     end
 
-                    S_HDR_LATCH: begin
-                        // TX_RDY_T уже опущен в начале такта
-                        st <= S_HDR_WAIT;
-                    end
+                    S_HDR_LATCH: st <= S_HDR_WAIT;
 
                     S_HDR_WAIT: begin
-                        // ждём, пока UART снова будет готов принять байт
                         if (TX_RDY_R) begin
                             if (rom_last) begin
                                 st <= S_RES_CHECK;
@@ -291,17 +242,8 @@ module SS_FSM #(
                         end
                     end
 
-                    // -------------------------------------------------
-                    // ВЫВОД РЕЗУЛЬТАТА (HEX -> ASCII)
-                    // -------------------------------------------------
-                    S_RES_CHECK: begin
-                        if (out_cnt < skip_nibbles) begin
-                            result   <= {result[99:0], 4'b0000};
-                            out_cnt  <= out_cnt + 1;
-                        end else begin
-                            st <= S_RES_SEND;
-                        end
-                    end
+                    // Вывод результата (фиксированно 26 nibble)
+                    S_RES_CHECK: st <= S_RES_SEND;
 
                     S_RES_SEND: begin
                         if (TX_RDY_R) begin
@@ -310,9 +252,7 @@ module SS_FSM #(
                         end
                     end
 
-                    S_RES_LATCH: begin
-                        st <= S_RES_WAIT;
-                    end
+                    S_RES_LATCH: st <= S_RES_WAIT;
 
                     S_RES_WAIT: begin
                         if (TX_RDY_R) begin
@@ -325,12 +265,8 @@ module SS_FSM #(
                         end
                     end
 
-                    // -------------------------------------------------
-                    // ВЫВОД СООБЩЕНИЙ ОБ ОШИБКАХ (ROM)
-                    // -------------------------------------------------
-                    S_ERR_FETCH: begin
-                        st <= S_ERR_SEND;
-                    end
+                    // Ошибки
+                    S_ERR_FETCH: st <= S_ERR_SEND;
 
                     S_ERR_SEND: begin
                         if (TX_RDY_R) begin
@@ -339,9 +275,7 @@ module SS_FSM #(
                         end
                     end
 
-                    S_ERR_LATCH: begin
-                        st <= S_ERR_WAIT;
-                    end
+                    S_ERR_LATCH: st <= S_ERR_WAIT;
 
                     S_ERR_WAIT: begin
                         if (TX_RDY_R) begin
@@ -355,7 +289,6 @@ module SS_FSM #(
                         end
                     end
 
-                    default: st <= S_IDLE;
                 endcase
             end
         end
