@@ -6,23 +6,29 @@ module SS_UART #(
 )(
     input  wire clk,
     input  wire rst,
-    // UART RX
+
+    // Линии UART
     input  wire uart_rx_i,
-    output reg        rx_valid = 0,
-    output reg [7:0]  rx_data  = 8'h00,
-    output reg        rx_parity_err = 0,
-    output reg        rx_frame_err  = 0,
-    // UART TX
     output wire uart_tx_o,
-    input  wire [7:0] tx_data,
-    input  wire       tx_start,
-    output reg        tx_busy = 0
+
+    // Флаги ошибок RX
+    output reg        rx_parity_err = 1'b0,
+    output reg        rx_frame_err  = 1'b0,
+
+    // Порт STP (UART -> FSM, ODPS)
+    output reg        RX_DATA_EN = 1'b0,
+    output reg [7:0]  RX_DATA_T  = 8'h00,
+
+    // Порт DRP (FSM -> UART, ODPS)
+    input  wire       TX_RDY_T,
+    input  wire [7:0] TX_DATA_R,
+    output reg        TX_RDY_R   = 1'b1
 );
 
     // -------------------------------------------------------------
     // Baud generator
     // -------------------------------------------------------------
-    localparam integer DIV = CLK_HZ / (BAUD * RATIO);
+    localparam integer DIV       = CLK_HZ / (BAUD * RATIO);
     localparam integer DIV_WIDTH = $clog2(DIV);
 
     wire tick;
@@ -39,12 +45,15 @@ module SS_UART #(
     // RX synchronizer (SYNC_STAGES flip-flops)
     // -------------------------------------------------------------
     reg [SYNC_STAGES-1:0] rx_sync = {SYNC_STAGES{1'b1}};
-    always @(posedge clk)
+
+    always @(posedge clk) begin
         rx_sync <= {rx_sync[SYNC_STAGES-2:0], uart_rx_i};
+    end
+
     wire rx = rx_sync[SYNC_STAGES-1];
 
     // -------------------------------------------------------------
-    // RX FSM  (Space parity ? parity bit must be 0)
+    // RX FSM (приём байта, 8N1 + SPACE parity = 0)
     // -------------------------------------------------------------
     localparam [2:0]
         R_IDLE  = 0,
@@ -54,29 +63,32 @@ module SS_UART #(
         R_STOP  = 4,
         R_DONE  = 5;
 
-    reg [2:0] r_state = R_IDLE;
-    reg [2:0] r_bit   = 0;
-    reg [3:0] r_sample = 0;
-    reg [7:0] r_shift  = 0;
+    reg [2:0] r_state  = R_IDLE;
+    reg [2:0] r_bit    = 3'd0;
+    reg [3:0] r_sample = 4'd0;
+    reg [7:0] r_shift  = 8'h00;
 
     always @(posedge clk) begin
         if (rst) begin
-            r_state <= R_IDLE;
-            rx_valid <= 0;
-            rx_parity_err <= 0;
-            rx_frame_err <= 0;
-            r_bit <= 0;
-            r_sample <= 0;
+            r_state       <= R_IDLE;
+            RX_DATA_EN    <= 1'b0;
+            RX_DATA_T     <= 8'h00;
+            rx_parity_err <= 1'b0;
+            rx_frame_err  <= 1'b0;
+            r_bit         <= 3'd0;
+            r_sample      <= 4'd0;
+            r_shift       <= 8'h00;
         end else begin
-            rx_valid <= 0;
+            // импульс готовности данных
+            RX_DATA_EN <= 1'b0;
+
             if (tick) begin
                 case (r_state)
-
                     R_IDLE: begin
-                        rx_parity_err <= 0;
-                        rx_frame_err <= 0;
+                        rx_parity_err <= 1'b0;
+                        rx_frame_err  <= 1'b0;
                         if (!rx) begin
-                            r_state <= R_START;
+                            r_state  <= R_START;
                             r_sample <= 0;
                         end
                     end
@@ -84,55 +96,66 @@ module SS_UART #(
                     R_START: begin
                         if (r_sample == RATIO/2) begin
                             if (!rx) begin
-                                r_state <= R_DATA;
-                                r_bit <= 0;
+                                r_state  <= R_DATA;
+                                r_bit    <= 0;
                                 r_sample <= 0;
-                            end else
+                            end else begin
                                 r_state <= R_IDLE;
-                        end else r_sample <= r_sample + 1;
+                            end
+                        end else begin
+                            r_sample <= r_sample + 1;
+                        end
                     end
 
                     R_DATA: begin
                         if (r_sample == RATIO-1) begin
-                            r_shift <= {rx, r_shift[7:1]};
+                            r_shift  <= {rx, r_shift[7:1]};
                             r_sample <= 0;
-                            if (r_bit == 7)
+                            if (r_bit == 3'd7)
                                 r_state <= R_PAR;
                             else
-                                r_bit <= r_bit + 1;
-                        end else r_sample <= r_sample + 1;
+                                r_bit   <= r_bit + 1;
+                        end else begin
+                            r_sample <= r_sample + 1;
+                        end
                     end
 
                     R_PAR: begin
                         if (r_sample == RATIO-1) begin
+                            // SPACE parity -> бит паритета должен быть 0
                             if (rx != 1'b0)
-                                rx_parity_err <= 1;   // SPACE parity violation
-                            r_state <= R_STOP;
+                                rx_parity_err <= 1'b1;
+                            r_state  <= R_STOP;
                             r_sample <= 0;
-                        end else r_sample <= r_sample + 1;
+                        end else begin
+                            r_sample <= r_sample + 1;
+                        end
                     end
 
                     R_STOP: begin
                         if (r_sample == RATIO-1) begin
                             if (rx != 1'b1)
-                                rx_frame_err <= 1;
+                                rx_frame_err <= 1'b1;
                             r_state <= R_DONE;
-                        end else r_sample <= r_sample + 1;
+                        end else begin
+                            r_sample <= r_sample + 1;
+                        end
                     end
 
                     R_DONE: begin
-                        rx_data <= r_shift;
-                        rx_valid <= 1;
-                        r_state <= R_IDLE;
+                        RX_DATA_T  <= r_shift;
+                        RX_DATA_EN <= 1'b1;   // импульс готовности данных
+                        r_state    <= R_IDLE;
                     end
 
+                    default: r_state <= R_IDLE;
                 endcase
             end
         end
     end
 
     // -------------------------------------------------------------
-    // TX FSM (Space parity ? parity_bit = 0)
+    // TX FSM (передача байта) + ODPS DRP
     // -------------------------------------------------------------
     localparam [2:0]
         T_IDLE  = 0,
@@ -142,40 +165,54 @@ module SS_UART #(
         T_STOP  = 4;
 
     reg [2:0] t_state = T_IDLE;
-    reg [2:0] t_bit   = 0;
-    reg [7:0] t_shift = 0;
-    reg [3:0] t_samp  = 0;
+    reg [2:0] t_bit   = 3'd0;
+    reg [7:0] t_shift = 8'h00;
+    reg [3:0] t_samp  = 4'd0;
     reg       t_out   = 1'b1;
-    reg       tx_req  = 0;
+
+    reg       tx_req  = 1'b0;   // запрос на передачу байта от ODPS
 
     assign uart_tx_o = t_out;
 
+    // --- ODPS handshake: фиксация байта и управление TX_RDY_R ---
     always @(posedge clk) begin
-        if (rst)
-            tx_req <= 0;
-        else if (tx_start)
-            tx_req <= 1;
-        else if (tick && (t_state == T_START))
-            tx_req <= 0;
+        if (rst) begin
+            tx_req  <= 1'b0;
+            TX_RDY_R <= 1'b1; // готов к приёму первого байта
+        end else begin
+            // Приём нового байта по протоколу ODPS,
+            // только если UART сейчас готов к приёму.
+            if (TX_RDY_T && TX_RDY_R) begin
+                tx_req  <= 1'b1;
+                TX_RDY_R <= 1'b0;  // готовность сняли до окончания передачи
+            end
+            // Возврат готовности после завершения стоп-бита
+            else if (tick && (t_state == T_STOP) && (t_samp == RATIO-1)) begin
+                TX_RDY_R <= 1'b1;
+            end
+            // Сброс запроса, когда TX FSM ушёл в START
+            else if (tick && (t_state == T_START)) begin
+                tx_req <= 1'b0;
+            end
+        end
     end
 
+    // --- TX FSM ---
     always @(posedge clk) begin
         if (rst) begin
             t_state <= T_IDLE;
             t_out   <= 1'b1;
-            tx_busy <= 0;
-            t_bit   <= 0;
-            t_samp  <= 0;
+            t_bit   <= 3'd0;
+            t_samp  <= 4'd0;
+            t_shift <= 8'h00;
         end else if (tick) begin
             case (t_state)
-
                 T_IDLE: begin
                     t_out <= 1'b1;
-                    tx_busy <= 0;
                     if (tx_req) begin
-                        t_shift <= tx_data;
-                        t_bit <= 0;
-                        tx_busy <= 1;
+                        t_shift <= TX_DATA_R;
+                        t_bit   <= 0;
+                        t_samp  <= 0;
                         t_state <= T_START;
                     end
                 end
@@ -183,41 +220,50 @@ module SS_UART #(
                 T_START: begin
                     t_out <= 1'b0;
                     if (t_samp == RATIO-1) begin
-                        t_samp <= 0;
+                        t_samp  <= 0;
                         t_state <= T_DATA;
-                    end else t_samp <= t_samp + 1;
+                    end else begin
+                        t_samp <= t_samp + 1;
+                    end
                 end
 
                 T_DATA: begin
                     t_out <= t_shift[0];
                     if (t_samp == RATIO-1) begin
-                        t_samp <= 0;
+                        t_samp  <= 0;
                         t_shift <= {1'b0, t_shift[7:1]};
-                        if (t_bit == 7)
+                        if (t_bit == 3'd7)
                             t_state <= T_PAR;
                         else
-                            t_bit <= t_bit + 1;
-                    end else t_samp <= t_samp + 1;
+                            t_bit   <= t_bit + 1;
+                    end else begin
+                        t_samp <= t_samp + 1;
+                    end
                 end
 
                 T_PAR: begin
-                    t_out <= 1'b0; // SPACE parity always 0
+                    t_out <= 1'b0; // SPACE parity = 0
                     if (t_samp == RATIO-1) begin
-                        t_samp <= 0;
+                        t_samp  <= 0;
                         t_state <= T_STOP;
-                    end else t_samp <= t_samp + 1;
+                    end else begin
+                        t_samp <= t_samp + 1;
+                    end
                 end
 
                 T_STOP: begin
                     t_out <= 1'b1;
                     if (t_samp == RATIO-1) begin
-                        t_samp <= 0;
+                        t_samp  <= 0;
                         t_state <= T_IDLE;
-                        tx_busy <= 0;
-                    end else t_samp <= t_samp + 1;
+                    end else begin
+                        t_samp <= t_samp + 1;
+                    end
                 end
 
+                default: t_state <= T_IDLE;
             endcase
         end
     end
+
 endmodule

@@ -4,16 +4,16 @@ module SS_FSM #(
     input  wire clk,
     input  wire rst,
 
-    // UART RX
-    input  wire        rx_valid,
-    input  wire        rx_parity_err,
-    input  wire        rx_frame_err,
-    input  wire [7:0]  rx_data,
+    // Порт STP (UART -> FSM, ODPS)
+    input  wire       RX_DATA_EN,
+    input  wire [7:0] RX_DATA_T,
+    input  wire       rx_parity_err,
+    input  wire       rx_frame_err,
 
-    // UART TX
-    output reg         tx_start,
-    output reg  [7:0]  tx_data,
-    input  wire        tx_busy
+    // Порт DRP (FSM -> UART, ODPS)
+    output reg        TX_RDY_T,
+    output reg [7:0]  TX_DATA_R,
+    input  wire       TX_RDY_R
 );
     // Коды сообщений
     localparam MSG_ANS  = 3'd0;
@@ -23,254 +23,339 @@ module SS_FSM #(
     localparam MSG_BOTH = 3'd4;
 
     // Состояния FSM
-    localparam S_IDLE = 0;
-    localparam S_IN_A = 1;
-    localparam S_SPACE = 2;
-    localparam S_IN_B = 3;
-    localparam S_WAIT_EQ = 4;
-    
+    localparam S_IDLE       = 0;
+    localparam S_IN_A       = 1;
+    localparam S_SPACE      = 2;
+    localparam S_IN_B       = 3;
+    localparam S_WAIT_EQ    = 4;
+
     // Группа заголовка
-    localparam S_HDR_FETCH = 5, S_HDR_SEND = 6, S_HDR_LATCH = 7, S_HDR_WAIT = 8;
-    
+    localparam S_HDR_FETCH  = 5,
+               S_HDR_SEND   = 6,
+               S_HDR_LATCH  = 7,
+               S_HDR_WAIT   = 8;
+
     // Группа результата
-    localparam S_RES_CHECK = 9, S_RES_SEND = 10, S_RES_LATCH = 11, S_RES_WAIT = 12;
-    
+    localparam S_RES_CHECK  = 9,
+               S_RES_SEND   = 10,
+               S_RES_LATCH  = 11,
+               S_RES_WAIT   = 12;
+
     // Группа ошибки
-    localparam S_ERR_FETCH = 13, S_ERR_SEND = 14, S_ERR_LATCH = 15, S_ERR_WAIT = 16;
+    localparam S_ERR_FETCH  = 13,
+               S_ERR_SEND   = 14,
+               S_ERR_LATCH  = 15,
+               S_ERR_WAIT   = 16;
 
     reg [4:0] st;
 
-    // Декодер
+    // Декодер ASCII -> HEX
     wire [3:0] in_hex;
     wire       in_ok;
-    SS_DC_ASCII_HEX u_dec (.ascii(rx_data), .hex(in_hex), .valid(in_ok));
+    SS_DC_ASCII_HEX u_dec (
+        .ascii (RX_DATA_T),
+        .hex   (in_hex),
+        .valid (in_ok)
+    );
 
     // Данные
     reg [OP_WIDTH-1:0] A, B;
-    reg [103:0] result;
+    reg [103:0]        result;
 
-    // Энкодер
-    wire [3:0] nib = result[103:100]; 
+    // Энкодер HEX -> ASCII
+    wire [3:0] nib = result[103:100];
     wire [7:0] out_ch;
-    SS_DC_HEX_ASCII u_enc (.hex(nib), .ascii(out_ch));
+    SS_DC_HEX_ASCII u_enc (
+        .hex  (nib),
+        .ascii(out_ch)
+    );
 
-    // ROM
+    // ROM сообщений
     reg  [2:0] rom_sel;
     reg  [7:0] rom_idx;
     wire [7:0] rom_ch;
     wire       rom_last;
-    SS_ROM u_rom (.clk(clk), .sel(rom_sel), .addr(rom_idx), .data(rom_ch), .last(rom_last));
 
-    // Счетчики
+    SS_ROM u_rom (
+        .clk  (clk),
+        .sel  (rom_sel),
+        .addr (rom_idx),
+        .data (rom_ch),
+        .last (rom_last)
+    );
+
+    // Счётчики
     reg [4:0] cnt_hex;
     reg [5:0] out_cnt;
     reg [5:0] skip_nibbles;
-    reg [6:0] temp_zeros; 
+    reg [6:0] temp_zeros;
 
+    // Отправка байта по ODPS (DRP-канал)
     task send;
         input [7:0] c;
         begin
-            tx_data  <= c;
-            tx_start <= 1'b1;
+            TX_DATA_R <= c;
+            TX_RDY_T  <= 1'b1;   // импульс "готов передать байт"
         end
     endtask
 
-    // Функция подсчета нулей
+    // Подсчёт ведущих нулей (для обрезки)
     function [6:0] count_leading_zeros;
         input [103:0] val;
         integer i;
-        reg found;
+        reg     found;
         begin
             count_leading_zeros = 0;
-            found = 0;
+            found               = 0;
             for (i = 103; i >= 0; i = i - 1) begin
                 if (!found) begin
-                    if (val[i] == 1'b1) found = 1'b1;
-                    else count_leading_zeros = count_leading_zeros + 1;
+                    if (val[i] == 1'b1)
+                        found = 1'b1;
+                    else
+                        count_leading_zeros = count_leading_zeros + 1;
                 end
             end
         end
     endfunction
 
+    // ---------------- Основной FSM ----------------
     always @(posedge clk) begin
         if (rst) begin
-            st <= S_IDLE;
-            tx_start <= 0;
-            tx_data <= 8'h00;
-            A <= 0; B <= 0; cnt_hex <= 0;
-            rom_sel <= 0; rom_idx <= 0;
-            result <= 0; out_cnt <= 0; skip_nibbles <= 0;
-            temp_zeros <= 0;
+            st        <= S_IDLE;
+            TX_RDY_T  <= 1'b0;
+            TX_DATA_R <= 8'h00;
+
+            A <= 0;
+            B <= 0;
+            cnt_hex <= 0;
+
+            rom_sel <= 0;
+            rom_idx <= 0;
+
+            result       <= 0;
+            out_cnt      <= 0;
+            skip_nibbles <= 0;
+            temp_zeros   <= 0;
         end else begin
-            tx_start <= 0; 
+            // по умолчанию передавать байт не пытаемся
+            TX_RDY_T <= 1'b0;
 
             // =========================================================
-            // ГЛОБАЛЬНАЯ ОБРАБОТКА ОШИБОК (Highest Priority)
+            // ГЛОБАЛЬНАЯ ОБРАБОТКА ОШИБОК UART (приоритет выше всего)
             // =========================================================
-            if (rx_valid && (rx_frame_err || rx_parity_err)) begin
-                st <= S_ERR_FETCH;  // Сразу к выборке
-                rom_idx <= 0;       // ВАЖНО: Сброс индекса здесь и сейчас!
-                
-                if (rx_frame_err && rx_parity_err) rom_sel <= MSG_BOTH;
-                else if (rx_parity_err) rom_sel <= MSG_PAR;
-                else rom_sel <= MSG_FRM;
-            end 
-            else begin
+            if (RX_DATA_EN && (rx_frame_err || rx_parity_err)) begin
+                st      <= S_ERR_FETCH;
+                rom_idx <= 0;
+
+                if (rx_frame_err && rx_parity_err)
+                    rom_sel <= MSG_BOTH;
+                else if (rx_parity_err)
+                    rom_sel <= MSG_PAR;
+                else
+                    rom_sel <= MSG_FRM;
+            end else begin
                 case (st)
-                // --- Ввод A ---
-                S_IDLE: begin
-                    A <= 0; B <= 0; cnt_hex <= 0;
-                    if (rx_valid) begin
-                        if (in_ok) begin
-                            A <= {A[OP_WIDTH-5:0], in_hex};
-                            cnt_hex <= 1;
-                            st <= S_IN_A;
-                        end else begin
-                            st <= S_ERR_FETCH; rom_sel <= MSG_FMT; rom_idx <= 0;
-                        end
-                    end
-                end
-
-                S_IN_A: begin
-                    if (rx_valid) begin
-                        if (cnt_hex < 13) begin
+                    // -------------------------------------------------
+                    // ВВОД A
+                    // -------------------------------------------------
+                    S_IDLE: begin
+                        A <= 0;
+                        B <= 0;
+                        cnt_hex <= 0;
+                        if (RX_DATA_EN) begin
                             if (in_ok) begin
-                                A <= {A[OP_WIDTH-5:0], in_hex};
-                                cnt_hex <= cnt_hex + 1;
+                                A       <= {A[OP_WIDTH-5:0], in_hex};
+                                cnt_hex <= 1;
+                                st      <= S_IN_A;
                             end else begin
-                                st <= S_ERR_FETCH; rom_sel <= MSG_FMT; rom_idx <= 0;
-                            end
-                        end else begin
-                            if (rx_data == " ") begin
-                                st <= S_SPACE; cnt_hex <= 0;
-                            end else begin
-                                st <= S_ERR_FETCH; rom_sel <= MSG_FMT; rom_idx <= 0;
+                                st      <= S_ERR_FETCH;
+                                rom_sel <= MSG_FMT;
+                                rom_idx <= 0;
                             end
                         end
                     end
-                end
 
-                // --- Пробел ---
-                S_SPACE: begin
-                    if (rx_valid) begin
-                        if (in_ok) begin
-                            B <= {B[OP_WIDTH-5:0], in_hex};
-                            cnt_hex <= 1;
-                            st <= S_IN_B;
-                        end else begin
-                            st <= S_ERR_FETCH; rom_sel <= MSG_FMT; rom_idx <= 0;
+                    S_IN_A: begin
+                        if (RX_DATA_EN) begin
+                            if (cnt_hex < 13) begin
+                                if (in_ok) begin
+                                    A       <= {A[OP_WIDTH-5:0], in_hex};
+                                    cnt_hex <= cnt_hex + 1;
+                                end else begin
+                                    st      <= S_ERR_FETCH;
+                                    rom_sel <= MSG_FMT;
+                                    rom_idx <= 0;
+                                end
+                            end else begin
+                                if (RX_DATA_T == " ") begin
+                                    st      <= S_SPACE;
+                                    cnt_hex <= 0;
+                                end else begin
+                                    st      <= S_ERR_FETCH;
+                                    rom_sel <= MSG_FMT;
+                                    rom_idx <= 0;
+                                end
+                            end
                         end
                     end
-                end
 
-                // --- Ввод B ---
-                S_IN_B: begin
-                    if (rx_valid) begin
-                        if (cnt_hex < 13) begin
+                    // -------------------------------------------------
+                    // ПРОБЕЛ
+                    // -------------------------------------------------
+                    S_SPACE: begin
+                        if (RX_DATA_EN) begin
                             if (in_ok) begin
-                                B <= {B[OP_WIDTH-5:0], in_hex};
-                                cnt_hex <= cnt_hex + 1;
+                                B       <= {B[OP_WIDTH-5:0], in_hex};
+                                cnt_hex <= 1;
+                                st      <= S_IN_B;
                             end else begin
-                                st <= S_ERR_FETCH; rom_sel <= MSG_FMT; rom_idx <= 0;
+                                st      <= S_ERR_FETCH;
+                                rom_sel <= MSG_FMT;
+                                rom_idx <= 0;
                             end
+                        end
+                    end
+
+                    // -------------------------------------------------
+                    // ВВОД B
+                    // -------------------------------------------------
+                    S_IN_B: begin
+                        if (RX_DATA_EN) begin
+                            if (cnt_hex < 13) begin
+                                if (in_ok) begin
+                                    B       <= {B[OP_WIDTH-5:0], in_hex};
+                                    cnt_hex <= cnt_hex + 1;
+                                end else begin
+                                    st      <= S_ERR_FETCH;
+                                    rom_sel <= MSG_FMT;
+                                    rom_idx <= 0;
+                                end
+                            end else begin
+                                if (RX_DATA_T == 8'h0D || RX_DATA_T == 8'h0A) begin
+                                    st <= S_WAIT_EQ;
+                                end else begin
+                                    st      <= S_ERR_FETCH;
+                                    rom_sel <= MSG_FMT;
+                                    rom_idx <= 0;
+                                end
+                            end
+                        end
+                    end
+
+                    // -------------------------------------------------
+                    // ВЫЧИСЛЕНИЕ A+B
+                    // -------------------------------------------------
+                    S_WAIT_EQ: begin
+                        result  <= A + B;
+                        rom_sel <= MSG_ANS;
+                        rom_idx <= 0;
+
+                        temp_zeros = count_leading_zeros(A + B) >> 2;
+                        if (temp_zeros >= 26)
+                            skip_nibbles <= 25;
+                        else
+                            skip_nibbles <= temp_zeros[5:0];
+
+                        out_cnt <= 0;
+                        st      <= S_HDR_FETCH;
+                    end
+
+                    // -------------------------------------------------
+                    // ВЫВОД ЗАГОЛОВКА (ROM)
+                    // -------------------------------------------------
+                    S_HDR_FETCH: begin
+                        st <= S_HDR_SEND;
+                    end
+
+                    S_HDR_SEND: begin
+                        if (TX_RDY_R) begin
+                            send(rom_ch);
+                            st <= S_HDR_LATCH;
+                        end
+                    end
+
+                    S_HDR_LATCH: begin
+                        // TX_RDY_T уже опущен в начале такта
+                        st <= S_HDR_WAIT;
+                    end
+
+                    S_HDR_WAIT: begin
+                        // ждём, пока UART снова будет готов принять байт
+                        if (TX_RDY_R) begin
+                            if (rom_last) begin
+                                st <= S_RES_CHECK;
+                            end else begin
+                                rom_idx <= rom_idx + 1;
+                                st      <= S_HDR_FETCH;
+                            end
+                        end
+                    end
+
+                    // -------------------------------------------------
+                    // ВЫВОД РЕЗУЛЬТАТА (HEX -> ASCII)
+                    // -------------------------------------------------
+                    S_RES_CHECK: begin
+                        if (out_cnt < skip_nibbles) begin
+                            result   <= {result[99:0], 4'b0000};
+                            out_cnt  <= out_cnt + 1;
                         end else begin
-                              if (rx_data == 8'h0D || rx_data == 8'h0A) // CR or LF
-                                      st <= S_WAIT_EQ;                               
-                            else begin st <= S_ERR_FETCH; rom_sel <= MSG_FMT; rom_idx <= 0; end
+                            st <= S_RES_SEND;
                         end
                     end
-                end
 
-                // --- Вычисление ---
-                S_WAIT_EQ: begin
-                    result <= A + B;
-                    rom_sel <= MSG_ANS;
-                    rom_idx <= 0;
-                    
-                    temp_zeros = count_leading_zeros(A + B) >> 2;
-                    if (temp_zeros >= 26) skip_nibbles <= 25;
-                    else skip_nibbles <= temp_zeros[5:0];
-
-                    out_cnt <= 0;
-                    st <= S_HDR_FETCH;
-                end
-
-                // --- Вывод заголовка (ROM) ---
-                S_HDR_FETCH: st <= S_HDR_SEND;
-
-                S_HDR_SEND: begin
-                    if (!tx_busy) begin
-                        send(rom_ch);
-                        st <= S_HDR_LATCH;
-                    end
-                end
-
-                S_HDR_LATCH: st <= S_HDR_WAIT;
-
-                S_HDR_WAIT: begin
-                    if (!tx_busy) begin 
-                        if (rom_last) st <= S_RES_CHECK;
-                        else begin
-                            rom_idx <= rom_idx + 1;
-                            st <= S_HDR_FETCH;
+                    S_RES_SEND: begin
+                        if (TX_RDY_R) begin
+                            send(out_ch);
+                            st <= S_RES_LATCH;
                         end
                     end
-                end
 
-                // --- Вывод результата (LOGIC) ---
-                S_RES_CHECK: begin
-                    if (out_cnt < skip_nibbles) begin
-                        result <= {result[99:0], 4'b0};
-                        out_cnt <= out_cnt + 1;
-                    end else begin
-                        st <= S_RES_SEND;
+                    S_RES_LATCH: begin
+                        st <= S_RES_WAIT;
                     end
-                end
 
-                S_RES_SEND: begin
-                    if (!tx_busy) begin
-                        send(out_ch);
-                        st <= S_RES_LATCH;
+                    S_RES_WAIT: begin
+                        if (TX_RDY_R) begin
+                            result  <= {result[99:0], 4'b0000};
+                            out_cnt <= out_cnt + 1;
+                            if (out_cnt == 25)
+                                st <= S_IDLE;
+                            else
+                                st <= S_RES_CHECK;
+                        end
                     end
-                end
 
-                S_RES_LATCH: st <= S_RES_WAIT;
-
-                S_RES_WAIT: begin
-                    if (!tx_busy) begin
-                        result <= {result[99:0], 4'b0};
-                        out_cnt <= out_cnt + 1;
-                        if (out_cnt == 25) st <= S_IDLE;
-                        else st <= S_RES_CHECK;
+                    // -------------------------------------------------
+                    // ВЫВОД СООБЩЕНИЙ ОБ ОШИБКАХ (ROM)
+                    // -------------------------------------------------
+                    S_ERR_FETCH: begin
+                        st <= S_ERR_SEND;
                     end
-                end
 
-                // --- Вывод ошибки (ROM) ---
-                S_ERR_FETCH: st <= S_ERR_SEND;
-
-                S_ERR_SEND: begin
-                    if (!tx_busy) begin
-                        send(rom_ch);
-                        st <= S_ERR_LATCH;
+                    S_ERR_SEND: begin
+                        if (TX_RDY_R) begin
+                            send(rom_ch);
+                            st <= S_ERR_LATCH;
+                        end
                     end
-                end
 
-                S_ERR_LATCH: st <= S_ERR_WAIT;
-                
-                S_ERR_WAIT: begin
-                    if (!tx_busy) begin
-                        if (rom_last) begin
-                            rom_idx <= 0;
-                            st <= S_IDLE;
+                    S_ERR_LATCH: begin
+                        st <= S_ERR_WAIT;
+                    end
+
+                    S_ERR_WAIT: begin
+                        if (TX_RDY_R) begin
+                            if (rom_last) begin
+                                rom_idx <= 0;
+                                st      <= S_IDLE;
+                            end else begin
+                                rom_idx <= rom_idx + 1;
+                                st      <= S_ERR_FETCH;
                             end
-                        else begin
-                            rom_idx <= rom_idx + 1;
-                            st <= S_ERR_FETCH;
                         end
                     end
-                end
-                
-                default: st <= S_IDLE;
+
+                    default: st <= S_IDLE;
                 endcase
             end
         end

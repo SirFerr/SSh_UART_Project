@@ -2,8 +2,8 @@
 # Vivado v2022.2 (64-bit)
 # SW Build 3671981 on Fri Oct 14 05:00:03 MDT 2022
 # IP Build 3669848 on Fri Oct 14 08:30:02 MDT 2022
-# Start of session at: Thu Dec  4 10:53:04 2025
-# Process ID: 17240
+# Start of session at: Fri Dec  5 11:28:09 2025
+# Process ID: 5192
 # Current directory: C:/SSh_UART_Project/SSh_UART_Project.runs/synth_1
 # Command line: vivado.exe -log SS_LR_TOP.vds -product Vivado -mode batch -messageDb vivado.pb -notrace -source SS_LR_TOP.tcl
 # Log file: C:/SSh_UART_Project/SSh_UART_Project.runs/synth_1/SS_LR_TOP.vds

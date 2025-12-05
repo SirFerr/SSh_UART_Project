@@ -1,8 +1,8 @@
 module SS_LR_TOP(
     input  wire CLK100MHZ,
     input  wire BTNC,        
-    input  wire UART_TXD_IN,   
-    output wire UART_RXD_OUT
+    input  wire UART_TXD_IN,   // RXD линии ПК
+    output wire UART_RXD_OUT   // TXD к ПК
 );
 
     // Сигнал сброса после фильтра
@@ -18,45 +18,61 @@ module SS_LR_TOP(
         .btn_o (rst)        // Чистый сигнал сброса
     );
 
-    // UART сигналы
-    wire        rx_valid;
-    wire        rx_par_err, rx_frm_err;
-    wire [7:0]  rx_data;
-    wire        tx_busy;
-    wire        tx_start;
-    wire [7:0]  tx_data;
+    // ODPS / UART <-> FSM
+    wire        RX_DATA_EN;
+    wire [7:0]  RX_DATA_T;
+    wire        rx_par_err;
+    wire        rx_frm_err;
 
-    // Инстанцирование UART
+    wire        TX_RDY_T;
+    wire [7:0]  TX_DATA_R;
+    wire        TX_RDY_R;
+
+    // ---------------- UART ----------------
     SS_UART #(
-        .CLK_HZ(100_000_000),
-        .BAUD(1800),
-        .RATIO(8),
+        .CLK_HZ     (100_000_000),
+        .BAUD       (1800),
+        .RATIO      (8),
         .SYNC_STAGES(3)
     ) uart (
-        .clk(CLK100MHZ),
-        .rst(rst),          // Используем отфильтрованный rst
-        .uart_rx_i(UART_TXD_IN),
-        .rx_valid(rx_valid),
+        .clk          (CLK100MHZ),
+        .rst          (rst),
+
+        // Линии UART
+        .uart_rx_i    (UART_TXD_IN),
+        .uart_tx_o    (UART_RXD_OUT),
+
+        // Флаги ошибок приёма
         .rx_parity_err(rx_par_err),
-        .rx_frame_err(rx_frm_err),
-        .rx_data(rx_data),
-        .uart_tx_o(UART_RXD_OUT), 
-        .tx_start(tx_start),
-        .tx_data(tx_data),
-        .tx_busy(tx_busy)
+        .rx_frame_err (rx_frm_err),
+
+        // Порт STP (ODPS, UART -> FSM)
+        .RX_DATA_EN   (RX_DATA_EN),
+        .RX_DATA_T    (RX_DATA_T),
+
+        // Порт DRP (ODPS, FSM -> UART)
+        .TX_RDY_T     (TX_RDY_T),
+        .TX_DATA_R    (TX_DATA_R),
+        .TX_RDY_R     (TX_RDY_R)
     );
 
-    // FSM «сложение»
-    SS_FSM #(.OP_WIDTH(52)) fsm (
-        .clk(CLK100MHZ),
-        .rst(rst),          // Используем отфильтрованный rst
-        .rx_valid(rx_valid),
+    // ---------------- FSM «сложение» ----------------
+    SS_FSM #(
+        .OP_WIDTH(52)
+    ) fsm (
+        .clk          (CLK100MHZ),
+        .rst          (rst),
+
+        // Порт STP от UART
+        .RX_DATA_EN   (RX_DATA_EN),
+        .RX_DATA_T    (RX_DATA_T),
         .rx_parity_err(rx_par_err),
-        .rx_frame_err(rx_frm_err),
-        .rx_data(rx_data),
-        .tx_start(tx_start),
-        .tx_data(tx_data),
-        .tx_busy(tx_busy)
+        .rx_frame_err (rx_frm_err),
+
+        // Порт DRP к UART
+        .TX_RDY_T     (TX_RDY_T),
+        .TX_DATA_R    (TX_DATA_R),
+        .TX_RDY_R     (TX_RDY_R)
     );
 
 endmodule

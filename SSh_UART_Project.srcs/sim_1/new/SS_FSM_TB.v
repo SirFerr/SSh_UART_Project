@@ -6,45 +6,56 @@ module SS_FSM_TB;
     always #5 clk = ~clk; // 100 MHz
 
     reg rst;
-    reg rx_valid;
-    reg rx_parity_err;
-    reg rx_frame_err;
-    reg [7:0] rx_data;
-    wire tx_start;
-    wire [7:0] tx_data;
-    reg tx_busy = 0;
 
+    // UART -> FSM  (STP ODPS)
+    reg        RX_DATA_EN;
+    reg  [7:0] RX_DATA_T;
+    reg        rx_parity_err;
+    reg        rx_frame_err;
+
+    // FSM -> UART  (DRP ODPS)
+    wire       TX_RDY_T;
+    wire [7:0] TX_DATA_R;
+    reg        TX_RDY_R = 1'b1;  // UART всегда готов принять байт
+
+    // DUT
     SS_FSM #(.OP_WIDTH(52)) dut (
         .clk(clk),
         .rst(rst),
-        .rx_valid(rx_valid),
+
+        .RX_DATA_EN(RX_DATA_EN),
+        .RX_DATA_T(RX_DATA_T),
         .rx_parity_err(rx_parity_err),
         .rx_frame_err(rx_frame_err),
-        .rx_data(rx_data),
-        .tx_start(tx_start),
-        .tx_data(tx_data),
-        .tx_busy(tx_busy)
+
+        .TX_RDY_T(TX_RDY_T),
+        .TX_DATA_R(TX_DATA_R),
+        .TX_RDY_R(TX_RDY_R)
     );
 
+    // ===== Отправка символа по STP =====
     task send_byte;
         input [7:0] data;
         input parity_err;
         input frame_err;
         begin
             @(posedge clk);
-            rx_data <= data;
+            RX_DATA_T     <= data;
             rx_parity_err <= parity_err;
-            rx_frame_err <= frame_err;
-            rx_valid <= 1;
-            $display("[%t] RX: '%s' (0x%h), ParityErr=%b, FrameErr=%b", $time, data, data, parity_err, frame_err);
+            rx_frame_err  <= frame_err;
+            RX_DATA_EN    <= 1'b1;
+            $display("[%t] RX: '%s' (0x%h) P=%b F=%b",
+                     $time, data, data, parity_err, frame_err);
+
             @(posedge clk);
-            rx_valid <= 0;
-            rx_data <= 0;
-            rx_parity_err <= 0;
-            rx_frame_err <= 0;
+            RX_DATA_EN    <= 1'b0;
+            RX_DATA_T     <= 8'h00;
+            rx_parity_err <= 1'b0;
+            rx_frame_err  <= 1'b0;
         end
     endtask
 
+    // ===== Передача одного операнда (13 hex-символов) =====
     task send_operand;
         input [103:0] value;
         integer i;
@@ -53,54 +64,61 @@ module SS_FSM_TB;
             for (i = 12; i >= 0; i = i - 1) begin
                 ch = (value >> (i*4)) & 4'hF;
                 if (ch < 10)
-                    send_byte(8'h30 + ch, 0, 0); // '0' + digit
+                    send_byte(8'h30 + ch, 0, 0); // цифры
                 else
-                    send_byte(8'h41 + (ch - 10), 0, 0); // 'A' + hex
+                    send_byte(8'h41 + (ch - 10), 0, 0); // A-F
             end
         end
     endtask
 
-    // Монитор вывода TX
+    // ===== Монитор отправки данных FSM в UART =====
     always @(posedge clk) begin
-        if (tx_start)
-            $display("[%t] TX: '%s' (0x%h)", $time, tx_data, tx_data);
+        if (TX_RDY_T) begin
+            $display("[%t] TX: '%s' (0x%h)", 
+                     $time, TX_DATA_R, TX_DATA_R);
+        end
     end
 
     initial begin
-        $display("=== FSM Testbench Start ===");
-        rst = 1; rx_valid = 0; rx_parity_err = 0; rx_frame_err = 0; rx_data = 0;
-        #20 rst = 0;
+        $display("=== FSM + ODPS Test Start ===");
+        rst = 1;
+        RX_DATA_EN = 0;
+        RX_DATA_T  = 0;
+        rx_parity_err = 0;
+        rx_frame_err  = 0;
+        #50 rst = 0;
 
-        $display("\n--- Тест 1: Корректные A + B ---");
+        // 1. Корректный ввод
+        $display("\n--- TEST 1: Correct A + B ---");
         send_operand(52'hA1);
-        send_byte(" ", 0, 0);            // пробел
+        send_byte(" ", 0, 0);
         send_operand(52'h1BB);
-        send_byte(8'h0D, 0, 0);  // CR
-        send_byte(8'h0A, 0, 0);  // LF
+        send_byte(8'h0D, 0, 0);
+        send_byte(8'h0A, 0, 0);
 
-        #1000;
+        #2000;
 
-        $display("\n--- Тест 2: Ошибка четности ---");
+        // 2. Ошибка четности
+        $display("\n--- TEST 2: Parity error ---");
         send_byte("A", 1, 0);
-
         #500;
 
-        $display("\n--- Тест 3: Ошибка кадра ---");
+        // 3. Ошибка кадра
+        $display("\n--- TEST 3: Frame error ---");
         send_byte("A", 0, 1);
-
         #500;
-        
-        $display("\n--- Тест 3: Ошибка четности + кадр ---");
+
+        // 4. Обе ошибки
+        $display("\n--- TEST 4: Both errors ---");
         send_byte("A", 1, 1);
-
         #500;
 
-        $display("\n--- Тест 4: Ошибка формата ---");
-        send_byte("Z", 0, 0); // не HEX-символ
+        // 5. Ошибка формата
+        $display("\n--- TEST 5: Format error ---");
+        send_byte("Z", 0, 0);
+        #2000;
 
-        #1000;
-
-        $display("=== FSM Testbench Done ===");
+        $display("\n=== FSM + ODPS Test Done ===");
         $finish;
     end
 
