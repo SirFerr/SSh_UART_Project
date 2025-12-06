@@ -1,8 +1,8 @@
 Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
 --------------------------------------------------------------------------------------
 | Tool Version : Vivado v.2022.2 (win64) Build 3671981 Fri Oct 14 05:00:03 MDT 2022
-| Date         : Fri Dec  5 17:05:12 2025
-| Host         : FerrsPC running 64-bit major release  (build 9200)
+| Date         : Sat Dec  6 09:23:06 2025
+| Host         : LAPTOP-LSLGBTP3 running 64-bit major release  (build 9200)
 | Command      : report_control_sets -verbose -file SS_LR_TOP_control_sets_placed.rpt
 | Design       : SS_LR_TOP
 | Device       : xc7a100t
@@ -23,11 +23,11 @@ Table of Contents
 +----------------------------------------------------------+-------+
 |                          Status                          | Count |
 +----------------------------------------------------------+-------+
-| Total control sets                                       |    16 |
-|    Minimum number of control sets                        |    16 |
+| Total control sets                                       |    18 |
+|    Minimum number of control sets                        |    18 |
 |    Addition due to synthesis replication                 |     0 |
 |    Addition due to physical synthesis replication        |     0 |
-| Unused register locations in slices containing registers |    37 |
+| Unused register locations in slices containing registers |    55 |
 +----------------------------------------------------------+-------+
 * Control sets can be merged at opt_design using control_set_merge or merge_equivalent_drivers
 ** Run report_qor_suggestions for automated merging and remapping suggestions
@@ -39,15 +39,15 @@ Table of Contents
 +--------------------+-------+
 |       Fanout       | Count |
 +--------------------+-------+
-| Total control sets |    16 |
+| Total control sets |    18 |
 | >= 0 to < 4        |     1 |
 | >= 4 to < 6        |     2 |
 | >= 6 to < 8        |     2 |
 | >= 8 to < 10       |     4 |
 | >= 10 to < 12      |     0 |
 | >= 12 to < 14      |     1 |
-| >= 14 to < 16      |     1 |
-| >= 16              |     5 |
+| >= 14 to < 16      |     0 |
+| >= 16              |     8 |
 +--------------------+-------+
 * Control sets can be remapped at either synth_design or opt_design
 
@@ -58,12 +58,12 @@ Table of Contents
 +--------------+-----------------------+------------------------+-----------------+--------------+
 | Clock Enable | Synchronous Set/Reset | Asynchronous Set/Reset | Total Registers | Total Slices |
 +--------------+-----------------------+------------------------+-----------------+--------------+
-| No           | No                    | No                     |              15 |            9 |
+| No           | No                    | No                     |              23 |           10 |
 | No           | No                    | Yes                    |               0 |            0 |
-| No           | Yes                   | No                     |              62 |           27 |
+| No           | Yes                   | No                     |             100 |           38 |
 | Yes          | No                    | No                     |               0 |            0 |
 | Yes          | No                    | Yes                    |               0 |            0 |
-| Yes          | Yes                   | No                     |             262 |           65 |
+| Yes          | Yes                   | No                     |             262 |           55 |
 +--------------+-----------------------+------------------------+-----------------+--------------+
 
 
@@ -73,22 +73,24 @@ Table of Contents
 +----------------------+-------------------------------------------------------+-----------------------------------+------------------+----------------+--------------+
 |     Clock Signal     |                     Enable Signal                     |          Set/Reset Signal         | Slice Load Count | Bel Load Count | Bels / Slice |
 +----------------------+-------------------------------------------------------+-----------------------------------+------------------+----------------+--------------+
-|  CLK100MHZ_IBUF_BUFG | uart/baud_gen_inst/t_out2_out                         | btn_filter/rst                    |                1 |              1 |         1.00 |
-|  CLK100MHZ_IBUF_BUFG | uart/baud_gen_inst/FSM_sequential_r_state_reg[0]_1[0] | btn_filter/rst                    |                2 |              4 |         2.00 |
-|  CLK100MHZ_IBUF_BUFG | fsm/cnt_hex[4]_i_1_n_0                                | btn_filter/rst                    |                2 |              5 |         2.50 |
-|  CLK100MHZ_IBUF_BUFG | fsm/TX_DATA_R[6]_i_1_n_0                              | btn_filter/rst                    |                2 |              7 |         3.50 |
-|  CLK100MHZ_IBUF_BUFG | uart/baud_gen_inst/E[0]                               | btn_filter/rst                    |                2 |              7 |         3.50 |
+|  CLK100MHZ_IBUF_BUFG | uart/baud_gen_inst/t_out2_out                         | btn_filter_c/rst                  |                1 |              1 |         1.00 |
+|  CLK100MHZ_IBUF_BUFG | uart/baud_gen_inst/rx_sync_reg[2][0]                  | btn_filter_c/rst                  |                2 |              4 |         2.00 |
+|  CLK100MHZ_IBUF_BUFG | fsm/cnt_hex[4]_i_1_n_0                                | btn_filter_c/rst                  |                2 |              5 |         2.50 |
+|  CLK100MHZ_IBUF_BUFG | fsm/TX_DATA_R[6]_i_1_n_0                              | btn_filter_c/rst                  |                2 |              7 |         3.50 |
+|  CLK100MHZ_IBUF_BUFG | uart/baud_gen_inst/E[0]                               | btn_filter_c/rst                  |                3 |              7 |         2.33 |
 |  CLK100MHZ_IBUF_BUFG |                                                       | fsm/u_rom/data[6]_i_1_n_0         |                7 |              8 |         1.14 |
-|  CLK100MHZ_IBUF_BUFG | fsm/u_rom/E[0]                                        | uart/rx_parity_err_reg_0          |                3 |              8 |         2.67 |
-|  CLK100MHZ_IBUF_BUFG | uart/baud_gen_inst/FSM_sequential_r_state_reg[0][0]   | btn_filter/rst                    |                3 |              8 |         2.67 |
-|  CLK100MHZ_IBUF_BUFG | uart/baud_gen_inst/FSM_sequential_r_state_reg[1][0]   | btn_filter/rst                    |                2 |              8 |         4.00 |
+|  CLK100MHZ_IBUF_BUFG | fsm/u_rom/E[0]                                        | uart/btn_o_reg_1                  |                3 |              8 |         2.67 |
+|  CLK100MHZ_IBUF_BUFG | uart/baud_gen_inst/FSM_sequential_r_state_reg[0]_0[0] | btn_filter_c/rst                  |                2 |              8 |         4.00 |
+|  CLK100MHZ_IBUF_BUFG | uart/baud_gen_inst/tick_reg_0[0]                      | btn_filter_c/rst                  |                1 |              8 |         8.00 |
 |  CLK100MHZ_IBUF_BUFG |                                                       | uart/baud_gen_inst/cnt[0]_i_1_n_0 |                4 |             13 |         3.25 |
-|  CLK100MHZ_IBUF_BUFG |                                                       |                                   |                9 |             15 |         1.67 |
-|  CLK100MHZ_IBUF_BUFG |                                                       | btn_filter/acc[0]_i_1_n_0         |                5 |             18 |         3.60 |
-|  CLK100MHZ_IBUF_BUFG |                                                       | btn_filter/rst                    |               11 |             23 |         2.09 |
-|  CLK100MHZ_IBUF_BUFG | fsm/A[51]_i_1_n_0                                     | btn_filter/rst                    |               17 |             52 |         3.06 |
-|  CLK100MHZ_IBUF_BUFG | fsm/B[51]_i_1_n_0                                     | btn_filter/rst                    |                9 |             52 |         5.78 |
-|  CLK100MHZ_IBUF_BUFG | fsm/out_cnt[5]_i_1_n_0                                | btn_filter/rst                    |               22 |            110 |         5.00 |
+|  CLK100MHZ_IBUF_BUFG |                                                       | btn_filter_c/acc[0]_i_1_n_0       |                5 |             18 |         3.60 |
+|  CLK100MHZ_IBUF_BUFG |                                                       | btn_filter_l/acc[0]_i_1__0_n_0    |                5 |             18 |         3.60 |
+|  CLK100MHZ_IBUF_BUFG |                                                       | btn_filter_r/acc[0]_i_1__1_n_0    |                5 |             18 |         3.60 |
+|  CLK100MHZ_IBUF_BUFG |                                                       |                                   |               10 |             23 |         2.30 |
+|  CLK100MHZ_IBUF_BUFG |                                                       | btn_filter_c/rst                  |               12 |             25 |         2.08 |
+|  CLK100MHZ_IBUF_BUFG | fsm/A[51]_i_1_n_0                                     | btn_filter_c/rst                  |                7 |             52 |         7.43 |
+|  CLK100MHZ_IBUF_BUFG | fsm/B[51]_i_1_n_0                                     | btn_filter_c/rst                  |               12 |             52 |         4.33 |
+|  CLK100MHZ_IBUF_BUFG | fsm/out_cnt[5]_i_1_n_0                                | btn_filter_c/rst                  |               20 |            110 |         5.50 |
 +----------------------+-------------------------------------------------------+-----------------------------------+------------------+----------------+--------------+
 
 

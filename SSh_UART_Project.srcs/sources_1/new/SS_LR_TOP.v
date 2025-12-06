@@ -1,39 +1,79 @@
 module SS_LR_TOP(
     input  wire CLK100MHZ,
-    input  wire BTNC,        
-    input  wire UART_TXD_IN,   // RXD линии ПК
-    output wire UART_RXD_OUT   // TXD к ПК
+
+    // Кнопки
+    input  wire BTNC,     // RESET
+    input  wire BTNL,     // PARITY ERROR
+    input  wire BTNR,     // FRAME ERROR
+
+    // UART
+    input  wire UART_TXD_IN,   // ПК -> плата (RX для FPGA)
+    output wire UART_RXD_OUT   // плата -> ПК (TX для FPGA)
 );
 
-    // Сигнал сброса после фильтра
+    //----------------------------------------------------------
+    // 1. Фильтр кнопки RESET (BTNC)
+    //----------------------------------------------------------
     wire rst;
 
-    // Инстанцирование фильтра кнопки
     SS_BTN_FLTR #(
         .SYNC_STAGES(3),
-        .STABLE_CNT(100_000) // 1 мс задержка для подавления дребезга
-    ) btn_filter (
+        .STABLE_CNT(100_000)   // ~1 ms debounce
+    ) btn_filter_c (
         .clk   (CLK100MHZ),
         .btn_i (BTNC),
-        .btn_o (rst)        // Чистый сигнал сброса
+        .btn_o (rst)
     );
 
-    // ODPS / UART <-> FSM
-    wire        RX_DATA_EN;
-    wire [7:0]  RX_DATA_T;
-    wire        rx_par_err;
-    wire        rx_frm_err;
+    //----------------------------------------------------------
+    // 2. Фильтр BTNL ? PARITY ERROR
+    //----------------------------------------------------------
+    wire btnl_clean;
 
-    wire        TX_RDY_T;
-    wire [7:0]  TX_DATA_R;
-    wire        TX_RDY_R;
+    SS_BTN_FLTR #(
+        .SYNC_STAGES(3),
+        .STABLE_CNT(100_000)
+    ) btn_filter_l (
+        .clk   (CLK100MHZ),
+        .btn_i (BTNL),
+        .btn_o (btnl_clean)
+    );
 
-    // ---------------- UART ----------------
+    //----------------------------------------------------------
+    // 3. Фильтр BTNR ? FRAME ERROR
+    //----------------------------------------------------------
+    wire btnr_clean;
+
+    SS_BTN_FLTR #(
+        .SYNC_STAGES(3),
+        .STABLE_CNT(100_000)
+    ) btn_filter_r (
+        .clk   (CLK100MHZ),
+        .btn_i (BTNR),
+        .btn_o (btnr_clean)
+    );
+
+    //----------------------------------------------------------
+    // 4. Связка UART <-> FSM через ODPS
+    //----------------------------------------------------------
+
+    // UART -> FSM (STP, ODPS)
+    wire       RX_DATA_EN;
+    wire [7:0] RX_DATA_T;
+    wire       rx_parity_err_uart;
+    wire       rx_frame_err_uart;
+
+    // FSM -> UART (DRP, ODPS)
+    wire       TX_RDY_T;
+    wire [7:0] TX_DATA_R;
+    wire       TX_RDY_R;
+
+    // --- Инстанс UART, как у тебя описан ---
     SS_UART #(
-        .CLK_HZ     (100_000_000),
-        .BAUD       (1800),
-        .RATIO      (8),
-        .SYNC_STAGES(3)
+        .CLK_HZ      (100_000_000),
+        .BAUD        (1800),
+        .RATIO       (8),
+        .SYNC_STAGES (3)
     ) uart (
         .clk          (CLK100MHZ),
         .rst          (rst),
@@ -42,37 +82,45 @@ module SS_LR_TOP(
         .uart_rx_i    (UART_TXD_IN),
         .uart_tx_o    (UART_RXD_OUT),
 
-        // Флаги ошибок приёма
-        .rx_parity_err(rx_par_err),
-        .rx_frame_err (rx_frm_err),
+        // Флаги ошибок RX от физического UART
+        .rx_parity_err(rx_parity_err_uart),
+        .rx_frame_err (rx_frame_err_uart),
 
-        // Порт STP (ODPS, UART -> FSM)
+        // Порт STP (UART -> FSM, ODPS)
         .RX_DATA_EN   (RX_DATA_EN),
         .RX_DATA_T    (RX_DATA_T),
 
-        // Порт DRP (ODPS, FSM -> UART)
+        // Порт DRP (FSM -> UART, ODPS)
         .TX_RDY_T     (TX_RDY_T),
         .TX_DATA_R    (TX_DATA_R),
         .TX_RDY_R     (TX_RDY_R)
     );
 
-    // ---------------- FSM «сложение» ----------------
+    //----------------------------------------------------------
+    // 5. Подмешиваем ошибки от кнопок
+    //----------------------------------------------------------
+    wire rx_parity_err = rx_parity_err_uart | btnl_clean;
+    wire rx_frame_err  = rx_frame_err_uart  | btnr_clean;
+
+    //----------------------------------------------------------
+    // 6. FSM
+    //----------------------------------------------------------
     SS_FSM #(
         .OP_WIDTH(52)
     ) fsm (
-        .clk          (CLK100MHZ),
-        .rst          (rst),
+        .clk           (CLK100MHZ),
+        .rst           (rst),
 
-        // Порт STP от UART
-        .RX_DATA_EN   (RX_DATA_EN),
-        .RX_DATA_T    (RX_DATA_T),
-        .rx_parity_err(rx_par_err),
-        .rx_frame_err (rx_frm_err),
+        // Порт STП (UART -> FSM)
+        .RX_DATA_EN    (RX_DATA_EN),
+        .RX_DATA_T     (RX_DATA_T),
+        .rx_parity_err (rx_parity_err),
+        .rx_frame_err  (rx_frame_err),
 
-        // Порт DRP к UART
-        .TX_RDY_T     (TX_RDY_T),
-        .TX_DATA_R    (TX_DATA_R),
-        .TX_RDY_R     (TX_RDY_R)
+        // Порт DRП (FSM -> UART)
+        .TX_RDY_T      (TX_RDY_T),
+        .TX_DATA_R     (TX_DATA_R),
+        .TX_RDY_R      (TX_RDY_R)
     );
 
 endmodule
